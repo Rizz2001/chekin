@@ -243,7 +243,10 @@ ipcMain.handle('reconectar', async () => {
                 (msg) => { if (mainWindow) mainWindow.webContents.send('estado-scraper', msg); },
                 (evt) => {
                     if (mainWindow) mainWindow.webContents.send('actualizacion-monitoreo', evt);
-                    if (evt?.tipo === 'nuevo_pago' && evt.movimiento) crearVentanaNotificacion(evt.movimiento);
+                    if (evt?.tipo === 'nuevo_pago' && evt.movimiento) {
+                        crearVentanaNotificacion(evt.movimiento);
+                        telegram.notificarPago(evt.movimiento).catch(console.error);
+                    }
                 }
             );
         }
