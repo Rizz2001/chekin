@@ -1,6 +1,6 @@
 {
   "name": "chekin-pago-movil",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Verificador de Pago Móvil con Puppeteer y Electron",
   "main": "main.js",
   "scripts": {
