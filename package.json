@@ -1,6 +1,6 @@
 {
   "name": "chekin-pago-movil",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Verificador de Pago Móvil con Puppeteer y Electron",
   "main": "main.js",
   "scripts": {
@@ -14,14 +14,17 @@
     "productName": "Chekin",
     "win": {
       "target": [
-        "portable"
+        "nsis"
       ],
       "icon": "icon.ico"
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "oneClick": true,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": false
     },
+
     "publish": [
       {
         "provider": "github",
