@@ -1,0 +1,45 @@
+{
+  "name": "chekin-pago-movil",
+  "version": "1.0.0",
+  "description": "Verificador de Pago Móvil con Puppeteer y Electron",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win",
+    "build:release": "electron-builder --win -p always",
+    "build:packager": "electron-packager . ppmovil --platform=win32 --arch=ia32,x64 --out=ppmovil-App --icon=icon.ico --overwrite --ignore=\"^/ppmovil-App\" --ignore=\"^/Chekin-Release\" --ignore=\"^/\\.git\" --ignore=\"^/dist\" --ignore=\"^/\\.cache\""
+  },
+  "build": {
+    "appId": "com.chekin.pagomovil",
+    "productName": "Chekin",
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Rizz2001",
+        "repo": "chekin"
+      }
+    ]
+  },
+  "dependencies": {
+    "electron-log": "^5.4.4",
+    "electron-updater": "^6.8.9",
+    "png-to-ico": "^3.0.2",
+    "puppeteer-core": "^23.11.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^26.15.3",
+    "electron-packager": "^17.1.2"
+  }
+}

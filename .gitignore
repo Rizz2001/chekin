@@ -1,0 +1,31 @@
+# Dependencias
+node_modules/
+
+# ⚠️ Contiene credenciales bancarias — NUNCA subir al repositorio
+config.json
+
+# Caché de pagos — datos locales de sesión
+cache_pagos.json
+
+# Capturas de depuración
+*.png
+*.jpg
+
+# Logs
+*.log
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Compilaciones
+Chekin-Release/
+Chekin-Definitivo/
+Chekin-Final/
+pagos.json
+
+ppmovil-App/
+dist/
+shift.json
+
+.cache/

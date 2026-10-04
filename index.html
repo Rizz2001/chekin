@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chekin - Verificador de Pagos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* CSS Variables */
+        :root {
+            --bg-base: #020617;
+            --glass-bg: rgba(30, 41, 59, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.4);
+            --danger: #ef4444;
+            --tg-blue: #2CA5E0;
+            --tg-blue-glow: rgba(44, 165, 224, 0.35);
+        }
+
+        /* Base & Background */
+        body {
+            margin: 0; padding: 0; font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base); color: var(--text-main);
+            overflow: hidden; height: 100vh;
+            display: flex; flex-direction: column;
+        }
+        
+        /* Animated Mesh Background */
+        .bg-mesh {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
+            background: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.15), transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.15), transparent 50%);
+            animation: breathe 10s ease-in-out infinite alternate;
+        }
+        @keyframes breathe {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.1); }
+        }
+
+        /* Typography & Globals */
+        h1, h2, h3, p { margin: 0; }
+        * { box-sizing: border-box; }
+        
+        /* Views */
+        .view { display: none; height: 100%; width: 100%; animation: fadeUp 0.5s ease forwards; }
+        .view.active { display: flex; }
+        
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- LOGIN VIEW --- */
+        #view-config { align-items: center; justify-content: center; padding: 20px; }
+        .login-card {
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 24px;
+            padding: 40px 30px; width: 100%; max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+        .login-header { text-align: center; margin-bottom: 30px; }
+        .login-header i { width: 48px; height: 48px; color: var(--primary); margin-bottom: 10px; }
+        .login-header h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+        .login-header p { color: var(--text-muted); font-size: 14px; }
+
+        /* Form Elements */
+        .input-group { margin-bottom: 20px; position: relative; }
+        .input-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .input-wrapper { position: relative; }
+        .input-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 18px; height: 18px; }
+        .form-control {
+            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border);
+            color: white; padding: 12px 16px 12px 42px; border-radius: 12px; font-size: 15px; outline: none; transition: all 0.3s;
+        }
+
+        /* Telegram panel */
+        .tg-divider {
+            display: flex; align-items: center; gap: 10px;
+            color: var(--text-muted); font-size: 12px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px; margin: 24px 0 16px;
+        }
+        .tg-divider::before, .tg-divider::after {
+            content: ''; flex: 1;
+            height: 1px; background: var(--glass-border);
+        }
+        .tg-panel {
+            background: rgba(44, 165, 224, 0.05);
+            border: 1px solid rgba(44, 165, 224, 0.2);
+            border-radius: 14px; padding: 16px;
+        }
+        .tg-panel-header {
+            display: flex; align-items: center; gap: 8px;
+            color: var(--tg-blue); font-size: 13px; font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .tg-panel-header svg { width: 16px; height: 16px; }
+        .tg-badge {
+            margin-left: auto; font-size: 10px; padding: 2px 8px;
+            border-radius: 20px; font-weight: 700;
+        }
+        .tg-badge.on  { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+        .tg-badge.off { background: rgba(148,163,184,0.1); color: var(--text-muted); border: 1px solid var(--glass-border); }
+        .tg-input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        .tg-input-row .input-group { flex: 1; margin-bottom: 0; }
+        .tg-actions { display: flex; gap: 8px; margin-top: 4px; }
+        .btn-tg-save {
+            flex: 1; padding: 10px 14px; border-radius: 10px;
+            background: rgba(44,165,224,0.15); border: 1px solid rgba(44,165,224,0.3);
+            color: var(--tg-blue); font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-tg-save:hover { background: rgba(44,165,224,0.25); transform: translateY(-1px); }
+        .btn-tg-test {
+            padding: 10px 14px; border-radius: 10px;
+            background: transparent; border: 1px solid var(--glass-border);
+            color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-tg-test:hover { background: rgba(255,255,255,0.05); color: white; }
+        #res-telegram { font-size: 12px; margin-top: 8px; min-height: 16px; }
+        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
+        
+        .btn {
+            width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px;
+            font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .btn:hover:not(:disabled) { background: #2563eb; transform: translateY(-2px); box-shadow: 0 10px 20px -10px var(--primary); }
+        .btn:active:not(:disabled) { transform: translateY(0); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* --- DASHBOARD LAYOUT --- */
+        #view-dashboard { display: none; height: 100%; width: 100%; }
+        #view-dashboard.active { display: flex; }
+        
+        .sidebar {
+            width: 280px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border); padding: 25px 20px;
+            display: flex; flex-direction: column; gap: 25px; flex-shrink: 0;
+        }
+        .main-content {
+            flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 25px; overflow: hidden;
+            background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+        }
+
+        .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 22px; color: white; }
+        
+        /* Sidebar Navigation */
+        .sidebar-nav { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .tab-btn {
+            display: flex; align-items: center; gap: 12px; padding: 14px 16px; width: 100%;
+            background: transparent; border: 1px solid transparent; border-radius: 12px;
+            color: var(--text-muted); font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.3s;
+            text-align: left;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .tab-btn.active { background: rgba(59, 130, 246, 0.15); color: var(--primary); border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .tab-btn i { width: 18px; height: 18px; }
+        
+        /* Top Bar in Main Content */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            border-bottom: 1px solid var(--glass-border); padding-bottom: 20px;
+        }
+        .top-bar-title h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+        .top-bar-title p { color: var(--text-muted); font-size: 14px; margin-top: 5px; }
+        
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2); color: var(--success); padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+        }
+        .pulse-dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.5); } 100% { opacity: 1; transform: scale(1); } }
+
+        .tab-content { display: none; flex: 1; flex-direction: column; gap: 20px; overflow: hidden; }
+        .tab-content.active { display: flex; animation: fadeUp 0.4s ease; }
+
+        /* Dashboard Cards Layout */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; flex: 1; overflow: hidden; }
+        @media (max-width: 900px) {
+            .dashboard-grid { grid-template-columns: 1fr; overflow-y: auto; }
+        }
+
+        .card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; }
+        
+        .balance-card { text-align: left; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%); }
+        .balance-card::before { content: ''; position: absolute; top: -50%; right: -20%; width: 200px; height: 200px; background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); opacity: 0.2; z-index: 0; }
+        .balance-card * { position: relative; z-index: 1; }
+        .balance-label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; margin-bottom: 10px; }
+        .balance-amount { font-size: 38px; font-weight: 800; color: white; margin-bottom: 25px; }
+
+        .stats-row { display: flex; gap: 15px; margin-top: auto; }
+        .stat-box { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 15px; }
+        .stat-box .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 5px; }
+        .stat-box .val { font-size: 20px; font-weight: 700; color: var(--success); }
+
+        /* Payments List */
+        .payments-card { flex: 1; overflow: hidden; }
+        .payments-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;}
+        .payments-header h3 { font-size: 16px; font-weight: 600; }
+        
+        /* Custom Scrollbar for payments */
+        #pagos-container { flex: 1; overflow-y: auto; padding-right: 10px; }
+        #pagos-container::-webkit-scrollbar { width: 6px; }
+        #pagos-container::-webkit-scrollbar-track { background: transparent; }
+        #pagos-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+        .payment-item {
+            background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 14px;
+            padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        .payment-item:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .payment-item.new { animation: highlight 2.5s ease-out forwards; }
+        @keyframes highlight { 0% { background: var(--success-glow); border-color: var(--success); transform: scale(1.02); } 100% { background: rgba(255,255,255,0.02); border-color: var(--glass-border); transform: scale(1); } }
+        
+        .pay-left { display: flex; align-items: center; gap: 15px; }
+        .pay-icon { width: 42px; height: 42px; background: rgba(16, 185, 129, 0.1); color: var(--success); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .pay-info .ref { font-family: monospace; font-size: 14px; color: var(--text-main); font-weight: 600; }
+        .pay-info .time { font-size: 12px; color: var(--text-muted); margin-top: 4px;}
+        .pay-right { font-weight: 700; color: var(--success); font-size: 18px; }
+
+        .sidebar-footer { display: flex; flex-direction: column; gap: 10px; }
+        .btn-danger { background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger); }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.15); border-color: var(--danger); box-shadow: none; }
+
+        /* Loader & Alerts */
+        .spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; }
+        .btn.loading .spinner { display: block; }
+        .btn.loading span, .btn.loading i { display: none; }
+
+        .alert {
+            margin-top: 15px; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 500; text-align: center;
+            display: none; animation: fadeUp 0.3s ease;
+        }
+        .alert.show { display: block; }
+        .alert.info { background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.2); }
+        .alert.error { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .alert.success { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .alert.warning { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        
+        .empty-state { text-align: center; padding: 30px 10px; color: var(--text-muted); font-size: 13px; }
+        .empty-state i { width: 32px; height: 32px; opacity: 0.5; margin-bottom: 10px; }
+
+        /* --- TIMER DE TURNO --- */
+        .turno-timer {
+            background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: 14px;
+            padding: 14px 16px; text-align: center;
+        }
+        .turno-timer .timer-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .turno-timer .timer-value { font-size: 24px; font-weight: 700; font-family: monospace; color: white; margin-top: 4px; letter-spacing: 2px; }
+
+        /* --- FILTRO DE PAGOS --- */
+        .filtro-pagos {
+            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border);
+            color: white; padding: 10px 14px 10px 38px; border-radius: 10px;
+            font-size: 13px; outline: none; transition: border-color 0.3s; margin-bottom: 12px;
+        }
+        .filtro-pagos:focus { border-color: var(--primary); }
+        .filtro-pagos::placeholder { color: var(--text-muted); }
+        .filtro-wrapper { position: relative; }
+        .filtro-wrapper i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 14px; height: 14px; pointer-events: none; }
+
+        /* --- MODAL DE CONFIRMACIÓN --- */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+            z-index: 9999; align-items: center; justify-content: center;
+            animation: fadeUp 0.2s ease;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: rgba(15, 23, 42, 0.97); border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 32px 28px; max-width: 380px; width: 90%;
+            text-align: center; box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+        }
+        .modal-icon { font-size: 36px; margin-bottom: 14px; }
+        .modal-box h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+        .modal-box p { color: var(--text-muted); font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
+        .modal-actions { display: flex; gap: 10px; }
+        .btn-ghost { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-muted); }
+
+        /* --- WIDGET MONTO MÍNIMO --- */
+        .monto-min-widget {
+            background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: 14px; padding: 14px 16px;
+        }
+        .monto-min-widget .widget-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .monto-min-input-wrap { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 10px; padding: 8px 12px; transition: border-color 0.3s; }
+        .monto-min-input-wrap:focus-within { border-color: var(--primary); }
+        .monto-min-prefix { font-size: 12px; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
+        .monto-min-input { flex: 1; background: transparent; border: none; color: white; font-size: 14px; font-weight: 600; outline: none; min-width: 0; }
+
+        /* Estilos exclusivos para la Impresión del Reporte */
+        @media print {
+            body > *:not(#print-section) { display: none !important; }
+            body { background: white; color: black; }
+            #print-section { 
+                display: block !important; 
+                position: absolute; top: 0; left: 0; width: 100%; 
+                padding: 20px; font-family: Arial, sans-serif; 
+            }
+            #print-section h1 { font-size: 24px; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+            .print-table { width: 100%; border-collapse: collapse; }
+            .print-table th, .print-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            .print-table th { background-color: #f2f2f2; }
+            .print-total { margin-top: 20px; font-size: 18px; font-weight: bold; text-align: right; }
+        }
+    </style>
+</head>
+<body>
+    <div id="print-section" style="display: none;"></div>
+    <div class="bg-mesh"></div>
+
+    <!-- MODAL DE CONFIRMACIÓN PROPIO (reemplaza confirm() nativo) -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon" id="modal-icon">⚠️</div>
+            <h3 id="modal-title"></h3>
+            <p id="modal-body"></p>
+            <div class="modal-actions">
+                <button id="modal-cancel" class="btn btn-ghost" style="flex:1;">Cancelar</button>
+                <button id="modal-confirm" class="btn btn-danger" style="flex:1;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA 1: LOGIN -->
+    <div id="view-config" class="view active">
+        <div class="login-card">
+            <div class="login-header">
+                <i data-lucide="shield-check"></i>
+                <h1>Chekin</h1>
+                <p>Verificación automatizada Mercantil</p>
+            </div>
+
+            <div class="input-group">
+                <label>Cédula o Tarjeta</label>
+                <div class="input-wrapper">
+                    <i data-lucide="user"></i>
+                    <input type="text" id="cedula" class="form-control" placeholder="V12345678" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Clave de Internet</label>
+                <div class="input-wrapper">
+                    <i data-lucide="lock"></i>
+                    <input type="password" id="clave" class="form-control" placeholder="••••••••">
+                </div>
+            </div>
+
+            <!-- NUEVO: Checkbox para recordar perfil de navegador -->
+            <div class="input-group" style="flex-direction: row; align-items: center; gap: 10px; margin-top: 5px; margin-bottom: 5px;">
+                <input type="checkbox" id="recordar-navegador" style="width: 16px; height: 16px; cursor: pointer;">
+                <label for="recordar-navegador" style="margin-bottom: 0; cursor: pointer; color: var(--text-muted); font-size: 13px;">Recordar equipo (Evita preguntas de seguridad)</label>
+            </div>
+
+            <button id="btnConectar" class="btn">
+                <span>Conectar al Banco</span>
+                <i data-lucide="arrow-right" style="width:18px;"></i>
+                <div class="spinner"></div>
+            </button>
+
+            <div id="res-config" class="alert"></div>
+
+            <!-- TELEGRAM CONFIG PANEL -->
+            <div class="tg-divider">Notificaciones</div>
+            <div class="tg-panel">
+                <div class="tg-panel-header">
+                    <i data-lucide="send"></i>
+                    Telegram
+                    <span id="tg-badge" class="tg-badge off">Desactivado</span>
+                </div>
+                <div class="tg-input-row">
+                    <div class="input-group">
+                        <label>Bot Token</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="key"></i>
+                            <input type="password" id="tg-token" class="form-control" placeholder="1234567890:AAG..." autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+                <div class="tg-input-row">
+                    <div class="input-group">
+                        <label>Chat ID</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="at-sign"></i>
+                            <input type="text" id="tg-chatid" class="form-control" placeholder="123456789" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+                <div class="tg-actions">
+                    <button class="btn-tg-save" id="btnGuardarTelegram">
+                        <i data-lucide="save" style="width:14px;height:14px;"></i>
+                        Guardar
+                    </button>
+                    <button class="btn-tg-test" id="btnProbarTelegram">
+                        <i data-lucide="send" style="width:14px;height:14px;"></i>
+                        Probar
+                    </button>
+                </div>
+                <div id="res-telegram"></div>
+            </div>
+
+            <div style="text-align: center; margin-top: 25px; font-size: 12px; color: var(--text-muted); opacity: 0.7;">
+                Elaborado por Aldrin V. Rizz
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA 2: DASHBOARD PRINCIPAL -->
+    <div id="view-dashboard" class="view">
+        
+        <!-- SIDEBAR LATERAL -->
+        <div class="sidebar">
+            <div class="brand">
+                <div style="background: var(--primary-glow); padding: 8px; border-radius: 10px; display: flex;">
+                    <i data-lucide="activity" style="color: white; width: 20px; height: 20px;"></i>
+                </div>
+                Chekin Admin
+            </div>
+
+            <div class="sidebar-nav">
+                <button class="tab-btn active" data-target="tab-live">
+                    <i data-lucide="layout-dashboard"></i> Panel General
+                </button>
+                <button class="tab-btn" data-target="tab-manual">
+                    <i data-lucide="search"></i> Auditoría Manual
+                </button>
+            </div>
+
+            <!-- TIMER DEL TURNO -->
+            <div class="turno-timer">
+                <div class="timer-label">Duración del Turno</div>
+                <div class="timer-value" id="timer-turno">00:00:00</div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button id="btnExportarCSV" class="btn" style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); color: var(--success);">
+                    <i data-lucide="file-spreadsheet" style="width:16px;"></i>
+                    <span>Exportar CSV</span>
+                </button>
+                <button id="btnImprimir" class="btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white;">
+                    <i data-lucide="printer" style="width:16px;"></i>
+                    <span>Imprimir Reporte</span>
+                </button>
+                <button id="btnDetener" class="btn" style="background: transparent; border: 1px solid var(--glass-border); color: #f43f5e;">
+                    <i data-lucide="pause-circle" style="width:16px;"></i>
+                    <span>Pausar Monitor</span>
+                </button>
+                <button id="btnCerrarJornada" class="btn btn-danger">
+                    <i data-lucide="door-closed" style="width:16px;"></i>
+                    <span>Cerrar Turno</span>
+                </button>
+                <div style="text-align: center; margin-top: 15px; font-size: 11px; color: var(--text-muted); opacity: 0.6;">
+                    Elaborado por Aldrin V. Rizz
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="main-content">
+            
+            <div class="top-bar">
+                <div class="top-bar-title">
+                    <h2 id="top-title">Panel General</h2>
+                    <p>Monitoreo automático de ingresos Mercantil</p>
+                </div>
+                <div class="status-badge" id="status-container">
+                    <div class="pulse-dot"></div>
+                    <span id="txt-status">Monitoreando</span>
+                </div>
+            </div>
+
+            <!-- TAB: MONITOREO EN VIVO -->
+            <div id="tab-live" class="tab-content active">
+                <div class="dashboard-grid">
+                    <!-- Columna Izquierda: Saldo y Stats -->
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div class="card balance-card" style="flex: 1;">
+                            <div class="balance-label" style="display: flex; align-items: center; justify-content: space-between;">
+                                <span>Saldo Disponible</span>
+                                <button id="btnToggleSaldo" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 5px; display: flex; align-items: center; transition: color 0.2s;">
+                                    <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+                                </button>
+                            </div>
+                            <div class="balance-amount" id="saldo-actual">Bs. 0,00</div>
+                            <div class="stats-row">
+                                <div class="stat-box">
+                                    <span class="label">Pagos (Turno)</span>
+                                    <span class="val" id="contador-pagos" style="color:white;">0</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="label">Ingresos (Turno)</span>
+                                    <span class="val" id="total-ingresos">Bs. 0,00</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="label">Promedio</span>
+                                    <span class="val" id="promedio-pago" style="color: #a78bfa;">Bs. 0,00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- NUEVO: Gráfico de Actividad -->
+                        <div class="card" style="flex: 1; padding: 20px; display: flex; flex-direction: column;">
+                            <div class="payments-header" style="margin-bottom: 10px; border-bottom: none; padding-bottom: 0;">
+                                <h3 style="font-size: 14px; color: var(--text-muted); text-transform: uppercase;">Actividad del Turno</h3>
+                                <i data-lucide="bar-chart-2" style="width: 16px; height: 16px; color: var(--primary);"></i>
+                            </div>
+                            <div style="flex: 1; position: relative; min-height: 150px;">
+                                <canvas id="chartActividad"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Lista de Pagos -->
+                    <div class="card payments-card" style="display: flex; flex-direction: column;">
+                        <div class="payments-header">
+                            <h3>Historial Reciente</h3>
+                            <i data-lucide="history" style="color: var(--text-muted); width: 18px; height: 18px;"></i>
+                        </div>
+                        <!-- FILTRO DE BÚSQUEDA -->
+                        <div class="filtro-wrapper">
+                            <i data-lucide="search"></i>
+                            <input type="text" id="filtro-pagos" class="filtro-pagos" placeholder="Buscar por referencia o monto...">
+                        </div>
+                        <div id="pagos-container">
+                            <div class="empty-state" id="empty-pagos" style="margin-top: 50px;">
+                                <i data-lucide="inbox"></i><br>
+                                Esperando nuevos pagos...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: BÚSQUEDA MANUAL -->
+            <div id="tab-manual" class="tab-content">
+                <div class="card" style="max-width: 500px; margin: 0 auto; width: 100%;">
+                    <div class="payments-header">
+                        <h3>Verificar Pago Específico</h3>
+                        <i data-lucide="file-search" style="color: var(--text-muted); width: 18px; height: 18px;"></i>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Referencia (últimos 4 dígitos)</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="hash"></i>
+                            <input type="text" id="ref" class="form-control" maxlength="4" placeholder="Ej: 1234">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Monto exacto (Bs)</label>
+                        <div class="input-wrapper">
+                            <i data-lucide="banknote"></i>
+                            <input type="number" id="monto" class="form-control" placeholder="0.00" step="0.01" min="0">
+                        </div>
+                    </div>
+
+                    <button id="btnVerificar" class="btn" style="margin-top: 20px;">
+                        <i data-lucide="search" style="width:18px;"></i>
+                        <span>Ejecutar Auditoría</span>
+                        <div class="spinner"></div>
+                    </button>
+
+                    <div id="res-verify" class="alert" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+        // 1. Inicializar íconos modernos
+        lucide.createIcons();
+
+        // --- FUNCIONES DE SONIDO Y GRÁFICOS ---
+        function playDing() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1046.50, ctx.currentTime); // C6
+                osc.frequency.exponentialRampToValueAtTime(1318.51, ctx.currentTime + 0.05); // E6
+                
+                gain.gain.setValueAtTime(0, ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.5);
+                // FIX: cerrar el AudioContext cuando el oscilador termina — evita memory leak acumulativo
+                osc.addEventListener('ended', () => ctx.close());
+            } catch(e) {}
+        }
+
+        let chartInstance = null;
+        function initChart() {
+            const ctx = document.getElementById('chartActividad').getContext('2d');
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = 'Inter';
+            
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ data: [], backgroundColor: 'rgba(16, 185, 129, 0.2)', borderColor: '#10b981', borderWidth: 1, borderRadius: 4 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: true, callbacks: { label: (ctx) => `Pagos: ${ctx.raw}` } } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false } },
+                        x: { grid: { display: false }, border: { display: false } }
+                    }
+                }
+            });
+        }
+        
+        async function updateChart() {
+            if (!chartInstance) return;
+            try {
+                const pagos = await window.electronAPI.obtenerPagosDelDia();
+                const horasMap = {};
+                pagos.forEach(p => {
+                    const d = p.timestamp ? new Date(p.timestamp) : new Date();
+                    const hr = d.getHours().toString().padStart(2, '0') + ':00';
+                    horasMap[hr] = (horasMap[hr] || 0) + 1;
+                });
+                const horas = Object.keys(horasMap).sort();
+                chartInstance.data.labels = horas;
+                chartInstance.data.datasets[0].data = horas.map(h => horasMap[h]);
+                chartInstance.update();
+            } catch(e) { console.log(e); }
+        }
+        // ----------------------------------------
+
+        // 2. Variables de estado del Dashboard
+        let sessionTotalBs = 0;
+        let sessionCount = 0;
+        let saldoReal = "0,00";
+        let saldoVisible = true;
+        let turnoTimerInterval = null;
+        let turnoStart = null;
+
+        // --- MODAL DE CONFIRMACIÓN (reemplaza confirm() y alert() nativos) ---
+        function showModal({ icon = '⚠️', titulo, mensaje, confirmText = 'Confirmar', cancelText = 'Cancelar', soloOk = false } = {}) {
+            return new Promise((resolve) => {
+                document.getElementById('modal-icon').textContent  = icon;
+                document.getElementById('modal-title').textContent = titulo;
+                document.getElementById('modal-body').textContent  = mensaje;
+                document.getElementById('modal-confirm').textContent = confirmText;
+                document.getElementById('modal-cancel').textContent  = cancelText;
+                document.getElementById('modal-cancel').style.display = soloOk ? 'none' : '';
+                document.getElementById('modal-overlay').classList.add('show');
+
+                const close = (result) => {
+                    document.getElementById('modal-overlay').classList.remove('show');
+                    document.getElementById('modal-confirm').onclick = null;
+                    document.getElementById('modal-cancel').onclick  = null;
+                    resolve(result);
+                };
+                document.getElementById('modal-confirm').onclick = () => close(true);
+                document.getElementById('modal-cancel').onclick  = () => close(false);
+            });
+        }
+
+        // --- TIMER DEL TURNO ---
+        function iniciarTimerTurno() {
+            if (turnoTimerInterval) clearInterval(turnoTimerInterval);
+            turnoStart = Date.now();
+            turnoTimerInterval = setInterval(() => {
+                const elapsed = Date.now() - turnoStart;
+                const h = String(Math.floor(elapsed / 3_600_000)).padStart(2, '0');
+                const m = String(Math.floor((elapsed % 3_600_000) / 60_000)).padStart(2, '0');
+                const s = String(Math.floor((elapsed % 60_000) / 1000)).padStart(2, '0');
+                document.getElementById('timer-turno').textContent = `${h}:${m}:${s}`;
+            }, 1000);
+        }
+
+        // 3. Referencias al DOM
+        const vConfig = document.getElementById('view-config');
+        const vDash = document.getElementById('view-dashboard');
+        
+        const inputCed = document.getElementById('cedula');
+        const inputPass = document.getElementById('clave');
+        const btnConectar = document.getElementById('btnConectar');
+        const resConfig = document.getElementById('res-config');
+
+        const inputRef = document.getElementById('ref');
+        const inputMonto = document.getElementById('monto');
+        const btnVerificar = document.getElementById('btnVerificar');
+        const resVerify = document.getElementById('res-verify');
+
+        // 4. Utilidad para mostrar alertas
+        function showMsg(element, text, type) {
+            element.textContent = text;
+            element.className = `alert show ${type}`;
+        }
+
+        // 5. Lógica del menú de Pestañas (Tabs)
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                btn.classList.add('active');
+                document.getElementById(btn.dataset.target).classList.add('active');
+                
+                // Actualizar título del header principal
+                const title = btn.dataset.target === 'tab-live' ? 'Panel General' : 'Auditoría Manual';
+                document.getElementById('top-title').textContent = title;
+            });
+        });
+
+        // 6. Lógica para Ocultar/Mostrar Saldo
+        document.getElementById('btnToggleSaldo').addEventListener('click', (e) => {
+            saldoVisible = !saldoVisible;
+            const btn = e.currentTarget;
+            if (saldoVisible) {
+                btn.innerHTML = '<i data-lucide="eye" style="width: 16px; height: 16px;"></i>';
+                document.getElementById('saldo-actual').textContent = `Bs. ${saldoReal}`;
+                btn.style.color = 'var(--text-muted)';
+            } else {
+                btn.innerHTML = '<i data-lucide="eye-off" style="width: 16px; height: 16px;"></i>';
+                document.getElementById('saldo-actual').textContent = 'Bs. ***';
+                btn.style.color = 'white';
+            }
+            lucide.createIcons({ root: btn });
+        });
+
+        // 5. Utilidad para agregar pagos visualmente y sumar contadores
+        // FIX: retorna el elemento DOM creado para que el llamador pueda manipularlo directamente
+        function agregarPagoVisual(mov) {
+            const pc = document.getElementById('pagos-container');
+            const empty = document.getElementById('empty-pagos');
+
+            if(empty) empty.style.display = 'none';
+
+            // Actualizar Estadísticas de Sesión
+            const montoStr = mov.monto.replace(/\./g, '').replace(',', '.');
+            const montoNumStats = parseFloat(montoStr); // renombrado para evitar colisión con montoNum del filtro
+            
+            if(!isNaN(montoNumStats)) {
+                sessionTotalBs += montoNumStats;
+                sessionCount++;
+                document.getElementById('contador-pagos').textContent = sessionCount;
+                document.getElementById('total-ingresos').textContent = `Bs. ${sessionTotalBs.toLocaleString('es-VE', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                // NUEVO: actualizar el promedio por pago
+                const promedio = sessionTotalBs / sessionCount;
+                document.getElementById('promedio-pago').textContent = `Bs. ${promedio.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+
+            // Crear elemento visual del pago
+            const item = document.createElement('div');
+            item.className = 'payment-item new';
+            
+            // Extraer hora si existe, o usar la actual
+            const time = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute:'2-digit' });
+            
+            const payLeft = document.createElement('div');
+            payLeft.className = 'pay-left';
+            
+            const payIcon = document.createElement('div');
+            payIcon.className = 'pay-icon';
+            payIcon.innerHTML = '<i data-lucide="arrow-down-left"></i>';
+            
+            const payInfo = document.createElement('div');
+            payInfo.className = 'pay-info';
+            
+            const divRef = document.createElement('div');
+            divRef.className = 'ref';
+            divRef.textContent = `Ref: ${mov.ref || mov.referencia}`;
+            
+            const divTime = document.createElement('div');
+            divTime.className = 'time';
+            divTime.textContent = time;
+            
+            payInfo.appendChild(divRef);
+            payInfo.appendChild(divTime);
+            payLeft.appendChild(payIcon);
+            payLeft.appendChild(payInfo);
+            
+            const payRight = document.createElement('div');
+            payRight.className = 'pay-right';
+            payRight.textContent = `+ Bs. ${mov.monto}`;
+            
+            item.appendChild(payLeft);
+            item.appendChild(payRight);
+            
+            pc.prepend(item);
+            lucide.createIcons({ root: item });
+            return item; // FIX: retornar el elemento para manipulación externa precisa
+        }
+
+        // Lógica de Login
+        window.addEventListener('DOMContentLoaded', async () => {
+            initChart();
+            const config = await window.electronAPI.getConfig();
+            if (config) {
+                if (config.cedula) inputCed.value = config.cedula;
+                if (config.clave) inputPass.value = config.clave;
+                if (config.recordarNavegador) document.getElementById('recordar-navegador').checked = true;
+                // Cargar config de Telegram si existe
+                if (config.botToken) document.getElementById('tg-token').value  = config.botToken;
+                if (config.chatId)   document.getElementById('tg-chatid').value = config.chatId;
+                if (config.botToken && config.chatId) actualizarBadgeTelegram(true);
+            }
+        });
+
+        function actualizarBadgeTelegram(activo) {
+            const badge = document.getElementById('tg-badge');
+            if (activo) {
+                badge.textContent = 'Activo';
+                badge.className = 'tg-badge on';
+            } else {
+                badge.textContent = 'Desactivado';
+                badge.className = 'tg-badge off';
+            }
+        }
+
+        document.getElementById('btnGuardarTelegram').addEventListener('click', async () => {
+            const botToken = document.getElementById('tg-token').value.trim();
+            const chatId   = document.getElementById('tg-chatid').value.trim();
+            const resEl    = document.getElementById('res-telegram');
+
+            if (!botToken || !chatId) {
+                resEl.textContent = '⚠️ Completa ambos campos.';
+                resEl.style.color = '#f59e0b';
+                return;
+            }
+
+            const r = await window.electronAPI.guardarTelegram({ botToken, chatId });
+            if (r.exito) {
+                resEl.textContent = '✅ Guardado correctamente.';
+                resEl.style.color = 'var(--success)';
+                actualizarBadgeTelegram(true);
+            } else {
+                resEl.textContent = '❌ ' + (r.mensaje || 'Error al guardar.');
+                resEl.style.color = 'var(--danger)';
+            }
+        });
+
+        document.getElementById('btnProbarTelegram').addEventListener('click', async () => {
+            const resEl = document.getElementById('res-telegram');
+            resEl.textContent = '⏳ Enviando mensaje de prueba...';
+            resEl.style.color = 'var(--text-muted)';
+
+            const r = await window.electronAPI.probarTelegram();
+            if (r.exito) {
+                resEl.textContent = '✅ Mensaje enviado. Revisa tu Telegram.';
+                resEl.style.color = 'var(--success)';
+            } else {
+                resEl.textContent = '❌ ' + (r.mensaje || 'Error al enviar.');
+                resEl.style.color = 'var(--danger)';
+            }
+        });
+
+        btnConectar.addEventListener('click', async () => {
+            const cedula = inputCed.value.trim();
+            const clave = inputPass.value.trim();
+            const recordar = document.getElementById('recordar-navegador').checked;
+            
+            if (!cedula || !clave) return showMsg(resConfig, 'Credenciales incompletas.', 'error');
+
+            btnConectar.disabled = true;
+            btnConectar.classList.add('loading');
+            showMsg(resConfig, 'Conectando...', 'info');
+
+            try {
+                const resp = await window.electronAPI.iniciarConexion({ cedula, clave, recordarNavegador: recordar });
+                if (resp.exito) {
+                    showMsg(resConfig, '¡Conectado!', 'success');
+                    
+                    // RECUPERACIÓN DE DATOS (Anti-apagones): 
+                    // Obtener los pagos que ya estaban guardados hoy para restablecer el historial
+                    const pagosHoy = await window.electronAPI.obtenerPagosDelDia();
+                    if (pagosHoy && pagosHoy.length > 0) {
+                        pagosHoy.forEach(p => {
+                            // Simulamos el pago visualmente y obtenemos el elemento creado
+                            const el = agregarPagoVisual({
+                                referencia: p.ref,
+                                monto: p.monto
+                            });
+                            // FIX: quitamos 'new' al elemento recién insertado (no al primero del DOM)
+                            if (el) el.classList.remove('new');
+                        });
+                        updateChart();
+                    }
+
+                    window.electronAPI.iniciarMonitoreo();
+                    iniciarTimerTurno(); // NUEVO: arrancar el contador del turno al conectar
+                    setTimeout(() => {
+                        vConfig.classList.remove('active');
+                        vDash.classList.add('active');
+                    }, 800);
+                } else {
+                    showMsg(resConfig, resp.mensaje, 'error');
+                }
+            } catch (e) {
+                showMsg(resConfig, e.message, 'error');
+            } finally {
+                btnConectar.disabled = false;
+                btnConectar.classList.remove('loading');
+            }
+        });
+
+        // 7. Lógica de Búsqueda Manual
+        btnVerificar.addEventListener('click', async () => {
+            const ref = inputRef.value.trim();
+            const monto = inputMonto.value.trim();
+            if (!ref || !monto) return showMsg(resVerify, 'Datos incompletos.', 'error');
+
+            btnVerificar.disabled = true;
+            btnVerificar.classList.add('loading');
+            showMsg(resVerify, 'Buscando...', 'info');
+
+            try {
+                const r = await window.electronAPI.verificarPago({ ref, monto });
+                showMsg(resVerify, r.mensaje, r.exito ? 'success' : 'warning');
+            } catch (e) {
+                showMsg(resVerify, e.message, 'error');
+            } finally {
+                btnVerificar.disabled = false;
+                btnVerificar.classList.remove('loading');
+            }
+        });
+
+        // FILTRO DE BÚSQUEDA en tiempo real sobre el historial
+        document.getElementById('filtro-pagos').addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('.payment-item').forEach(item => {
+                item.style.display = !q || item.textContent.toLowerCase().includes(q) ? 'flex' : 'none';
+            });
+        });
+
+        // 8. Controles de Monitoreo
+        document.getElementById('btnDetener').addEventListener('click', (e) => {
+            window.electronAPI.detenerMonitoreo();
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            document.getElementById('txt-status').textContent = 'Pausado';
+            document.querySelector('.pulse-dot').style.display = 'none';
+            document.getElementById('status-container').style.color = 'var(--text-muted)';
+            document.getElementById('status-container').style.borderColor = 'var(--glass-border)';
+            document.getElementById('status-container').style.background = 'transparent';
+        });
+
+        // 9. Lógica para Cerrar Jornada (reemplaza confirm() nativo por modal propio)
+        document.getElementById('btnCerrarJornada').addEventListener('click', async () => {
+            const confirmar = await showModal({
+                icon: '🔒',
+                titulo: 'Cerrar Turno',
+                mensaje: 'Esto generará el PDF de reporte, reiniciará el historial y cerrará la aplicación. ¿Continuar?',
+                confirmText: 'Cerrar Turno',
+                cancelText: 'Cancelar'
+            });
+            if (confirmar) {
+                await window.electronAPI.cerrarJornada();
+                window.close();
+            }
+        });
+
+        // NUEVO (Fase 4): Exportar CSV del turno actual al Escritorio
+        document.getElementById('btnExportarCSV').addEventListener('click', async () => {
+            const result = await window.electronAPI.exportarCSV();
+            if (result.exito) {
+                await showModal({ icon: '✅', titulo: 'CSV Exportado', mensaje: `Archivo guardado en el Escritorio:\n${result.ruta}`, confirmText: 'OK', soloOk: true });
+            } else {
+                await showModal({ icon: '⚠️', titulo: 'Sin datos', mensaje: 'No hay pagos en el turno actual para exportar.', confirmText: 'OK', soloOk: true });
+            }
+        });
+
+        // LÓGICA DE IMPRESIÓN DEL REPORTE DEL DÍA
+        document.getElementById('btnImprimir').addEventListener('click', async () => {
+            const pagosDia = await window.electronAPI.obtenerPagosDelDia();
+            
+            if (pagosDia.length === 0) {
+                await showModal({ icon: 'ℹ️', titulo: 'Sin pagos', mensaje: 'No hay pagos registrados hoy para imprimir.', confirmText: 'OK', soloOk: true });
+                return;
+            }
+
+            const printDiv = document.getElementById('print-section');
+            let totalGeneral = 0;
+
+            let html = `
+                <h1>Reporte de Pagos Móviles del Día</h1>
+                <p><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-VE')}</p>
+                <p><strong>Cantidad de Transacciones:</strong> ${pagosDia.length}</p>
+                <table class="print-table">
+                    <thead>
+                        <tr>
+                            <th>Nro.</th>
+                            <th>Referencia</th>
+                            <th>Monto (Bs.)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            pagosDia.forEach((p, index) => {
+                const montoNum = parseFloat(p.monto.replace(/\./g, '').replace(',', '.'));
+                if (!isNaN(montoNum)) totalGeneral += montoNum;
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${p.ref}</td>
+                        <td>${p.monto}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div class="print-total">Total del Día: Bs. ${totalGeneral.toLocaleString('es-VE', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+            `;
+
+            printDiv.innerHTML = html;
+            window.print();
+        });
+
+        // 9. Eventos del Scraper (Main Process)
+        window.electronAPI.onEstadoScraper((msg) => {
+            if(!msg) return;
+            if(vConfig.classList.contains('active')) showMsg(resConfig, msg, 'info');
+        });
+
+        window.electronAPI.onActualizacionMonitoreo((data) => {
+            if (data.saldo) {
+                saldoReal = data.saldo;
+                if (saldoVisible) {
+                    document.getElementById('saldo-actual').textContent = `Bs. ${saldoReal}`;
+                }
+            }
+
+            if (data.tipo === 'actualizacion_saldo') {
+                // Cuando hay éxito de lectura (y actualiza saldo), restaurar indicador visual de Monitoreando por si estaba en Reconectando
+                document.getElementById('txt-status').textContent = 'Monitoreando';
+                document.getElementById('status-container').style.color = 'var(--success)';
+                document.getElementById('status-container').style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                document.getElementById('status-container').style.background = 'rgba(16, 185, 129, 0.1)';
+                document.querySelector('.pulse-dot').style.display = 'block';
+                document.querySelector('.pulse-dot').style.background = 'var(--success)';
+                document.querySelector('.pulse-dot').style.boxShadow = '0 0 8px var(--success)';
+            }
+
+            if (data.tipo === 'nuevo_pago') {
+                agregarPagoVisual(data.movimiento);
+                // FIX: verificar permisos antes de mostrar notificación del sistema
+                if ('Notification' in window) {
+                    if (Notification.permission === 'granted') {
+                        new Notification('Nuevo Pago', { body: `Bs. ${data.movimiento.monto} | Ref: ${data.movimiento.referencia}` });
+                    } else if (Notification.permission !== 'denied') {
+                        Notification.requestPermission().then(perm => {
+                            if (perm === 'granted') {
+                                new Notification('Nuevo Pago', { body: `Bs. ${data.movimiento.monto} | Ref: ${data.movimiento.referencia}` });
+                            }
+                        });
+                    }
+                }
+                playDing();
+                updateChart();
+            } else if (data.tipo === 'reconectando') {
+                document.getElementById('txt-status').textContent = 'Internet inestable...';
+                document.getElementById('status-container').style.color = '#f59e0b';
+                document.getElementById('status-container').style.borderColor = '#f59e0b';
+                document.getElementById('status-container').style.background = 'rgba(245, 158, 11, 0.1)';
+                document.querySelector('.pulse-dot').style.display = 'block';
+                document.querySelector('.pulse-dot').style.background = '#f59e0b';
+                document.querySelector('.pulse-dot').style.boxShadow = '0 0 8px #f59e0b';
+
+            } else if (data.tipo === 'desconexion') {
+                // Sesión expirada (por los 20 min del banco), iniciar auto-reconexión silenciosa
+                document.getElementById('txt-status').textContent = 'Reconectando al banco...';
+                document.getElementById('status-container').style.color = '#3b82f6';
+                document.getElementById('status-container').style.borderColor = '#3b82f6';
+                document.getElementById('status-container').style.background = 'rgba(59, 130, 246, 0.1)';
+                document.querySelector('.pulse-dot').style.display = 'block';
+                document.querySelector('.pulse-dot').style.background = '#3b82f6';
+                document.querySelector('.pulse-dot').style.boxShadow = '0 0 8px #3b82f6';
+
+                // Enviar mensaje a Telegram notificando
+                window.electronAPI.enviarAlertaTelegram('La sesión expiró (20 min). El bot se está auto-reconectando de forma invisible...').catch(console.error);
+
+                // Llamar auto-reconexión
+                window.electronAPI.reconectar().then(res => {
+                    if (!res || !res.exito) {
+                        // Solo si falla definitivamente, volvemos a la pantalla de configuración
+                        btnConectar.disabled = false;
+                        btnConectar.classList.remove('loading');
+                        vDash.classList.remove('active');
+                        vConfig.classList.add('active');
+                        showMsg(resConfig, 'La sesión expiró y la auto-reconexión falló. Debes volver a conectar manualmente.', 'error');
+                    }
+                });
+                
+            } else if (data.tipo === 'error_critico') {
+                document.getElementById('txt-status').textContent = 'Error Crítico';
+                document.querySelector('.pulse-dot').style.display = 'none';
+                document.getElementById('status-container').style.color = '#f43f5e';
+                document.getElementById('status-container').style.borderColor = '#f43f5e';
+                document.getElementById('status-container').style.background = 'rgba(244, 63, 94, 0.1)';
+
+                window.electronAPI.enviarAlertaTelegram(data.mensaje).catch(console.error);
+
+                btnConectar.disabled = false;
+                btnConectar.classList.remove('loading');
+                vDash.classList.remove('active');
+                vConfig.classList.add('active');
+                showMsg(resConfig, data.mensaje, 'error');
+            }
+        });
+    </script>
+</body>
+</html>
