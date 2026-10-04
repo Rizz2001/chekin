@@ -1,6 +1,6 @@
 {
   "name": "chekin-pago-movil",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Verificador de Pago Móvil con Puppeteer y Electron",
   "main": "main.js",
   "scripts": {
@@ -27,7 +27,8 @@
       {
         "provider": "github",
         "owner": "Rizz2001",
-        "repo": "chekin"
+        "repo": "chekin",
+        "releaseType": "release"
       }
     ]
   },
