@@ -44,10 +44,11 @@ function escapeHtml(str) {
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 480,
-        height: 700,
-        minWidth: 420,
+        width: 1200,
+        height: 800,
+        minWidth: 900,
         minHeight: 600,
+        show: false,
         resizable: true,
         webPreferences: {
             // FIX: Configuración segura — el renderer NO tiene acceso directo a Node.js
@@ -57,10 +58,16 @@ function createWindow() {
         },
         autoHideMenuBar: true,
         title: 'Chekin - Verificador de Pago Móvil',
-        backgroundColor: '#0f172a'
+        backgroundColor: '#0A0A0B'
     });
 
     mainWindow.loadFile('index.html');
+    
+    // Maximizar la ventana antes de mostrarla para evitar parpadeos
+    mainWindow.maximize();
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
+    });
 }
 
 app.whenReady().then(() => {

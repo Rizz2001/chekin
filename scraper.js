@@ -89,11 +89,13 @@ function cargarCache() {
         for (const item of data) {
             if (typeof item === 'string') {
                 // Formato muy antiguo
-                referenciasVistas.set(item, { ref: item, monto: '0,00', fecha: hoy, timestamp: Date.now() });
-            } else if (item && item.ref && item.fecha) {
+                referenciasVistas.set(item, { ref: item, referencia: item, monto: '0,00', fecha: hoy, timestamp: Date.now() });
+            } else if (item && (item.ref || item.referencia) && item.fecha) {
                 const fechaItem = new Date(item.fecha);
                 if (fechaItem >= limite) {
                     item.timestamp = item.timestamp || fechaItem.getTime();
+                    item.ref = item.ref || item.referencia;
+                    item.referencia = item.ref;
                     referenciasVistas.set(item.ref, item);
                 }
             }
@@ -121,12 +123,15 @@ function agregarACache(mov) {
     const fecha = ahora.toISOString().slice(0, 10);
     const timestamp = ahora.getTime();
     if (typeof mov === 'string') {
-        referenciasVistas.set(mov, { ref: mov, monto: '0,00', fecha, timestamp });
+        referenciasVistas.set(mov, { ref: mov, referencia: mov, monto: '0,00', fecha, timestamp });
     } else {
-        referenciasVistas.set(mov.referencia, { 
-            ref: mov.referencia, 
-            monto: mov.monto, 
-            textoCompleto: mov.textoCompleto, 
+        const refKey = mov.referencia || mov.ref;
+        if (!refKey) return;
+        referenciasVistas.set(refKey, { 
+            ref: refKey, 
+            referencia: refKey,
+            monto: mov.monto || '0,00', 
+            textoCompleto: mov.textoCompleto || '', 
             fecha,
             timestamp
         });
@@ -135,6 +140,9 @@ function agregarACache(mov) {
 
 /** Obtiene todos los pagos registrados desde que inició la jornada. */
 function obtenerPagosDelDia() {
+    if (referenciasVistas.size === 0) {
+        cargarCache();
+    }
     const pagos = [];
     for (const item of referenciasVistas.values()) {
         const t = item.timestamp || 0;
@@ -769,9 +777,8 @@ async function iniciarMonitoreo(logCallback, onNuevaTransaccion) {
                 }
             }
 
-            if (!hayNuevos) {
-                onNuevaTransaccion({ tipo: 'actualizacion_saldo', saldo });
-            }
+            // Siempre enviamos el saldo más reciente extraído, sin importar si hay pagos nuevos
+            onNuevaTransaccion({ tipo: 'actualizacion_saldo', saldo });
 
             backoffMs = BACKOFF_INITIAL_MS; // FIX: resetear backoff en cada ciclo exitoso
             erroresConsecutivos = 0; // Resetear errores al tener éxito
@@ -779,6 +786,13 @@ async function iniciarMonitoreo(logCallback, onNuevaTransaccion) {
         } catch (error) {
             console.error("Error en el ciclo de monitoreo:", error.message);
             erroresConsecutivos++;
+
+            if (browser && !browser.isConnected()) {
+                console.error("[BOT] El navegador fue cerrado inesperadamente.");
+                onNuevaTransaccion({ tipo: 'error_critico', mensaje: 'El navegador fue cerrado. Debes conectar de nuevo.' });
+                isMonitoring = false;
+                break;
+            }
 
             // En lugar de detenerse a los 3 errores, informamos a la interfaz que estamos reintentando
             onNuevaTransaccion({ tipo: 'reconectando' });

@@ -8,20 +8,23 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* CSS Variables */
+        /* CSS Variables - Premium Dark Mode */
         :root {
-            --bg-base: #020617;
-            --glass-bg: rgba(30, 41, 59, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --primary: #3b82f6;
-            --primary-glow: rgba(59, 130, 246, 0.5);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #10b981;
-            --success-glow: rgba(16, 185, 129, 0.4);
+            --bg-base: #0A0A0B;
+            --glass-bg: #151518;
+            --glass-border: #27272A;
+            --primary: #60A5FA;
+            --primary-glow: rgba(96, 165, 250, 0.15);
+            --text-main: #FFFFFF;
+            --text-muted: #8A8A93;
+            --success: #4ADE80;
+            --success-glow: rgba(74, 222, 128, 0.15);
             --danger: #ef4444;
-            --tg-blue: #2CA5E0;
-            --tg-blue-glow: rgba(44, 165, 224, 0.35);
+            --tg-blue: #60A5FA;
+            --tg-blue-glow: rgba(96, 165, 250, 0.15);
+            
+            --accent-orange: #FB923C;
+            --accent-yellow: #FBBF24;
         }
 
         /* Base & Background */
@@ -31,6 +34,13 @@
             overflow: hidden; height: 100vh;
             display: flex; flex-direction: column;
         }
+
+        /* Global Scrollbars (Desktop Responsive Pro) */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; border: 2px solid var(--bg-base); }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
         
         /* Animated Mesh Background */
         .bg-mesh {
@@ -58,18 +68,48 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- LOGIN VIEW --- */
-        #view-config { align-items: center; justify-content: center; padding: 20px; }
-        .login-card {
-            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); border-radius: 24px;
-            padding: 40px 30px; width: 100%; max-width: 400px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        /* --- LOGIN VIEW SPLIT LAYOUT --- */
+        #view-config { padding: 0; }
+        
+        .login-branding {
+            flex: 1; background: linear-gradient(135deg, rgba(96, 165, 250, 0.05) 0%, var(--bg-base) 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            position: relative; overflow: hidden; border-right: 1px solid var(--glass-border);
         }
-        .login-header { text-align: center; margin-bottom: 30px; }
-        .login-header i { width: 48px; height: 48px; color: var(--primary); margin-bottom: 10px; }
-        .login-header h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
-        .login-header p { color: var(--text-muted); font-size: 14px; }
+        .login-branding .brand-content { position: relative; z-index: 2; text-align: center; max-width: 450px; padding: 40px; }
+        .brand-icon { width: 80px; height: 80px; background: rgba(96, 165, 250, 0.1); border-radius: 24px; display: flex; justify-content: center; align-items: center; margin: 0 auto 30px; border: 1px solid rgba(96,165,250,0.2); }
+        .brand-icon i { width: 40px; height: 40px; color: var(--primary); }
+        .login-branding h1 { font-size: clamp(32px, 4vw, 48px); font-weight: 800; margin-bottom: 15px; letter-spacing: -1px; }
+        .login-branding p { font-size: clamp(14px, 1.5vw, 16px); color: var(--text-muted); line-height: 1.6; }
+        
+        .brand-stats { display: flex; gap: 15px; justify-content: center; margin-top: 40px; }
+        .b-stat { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); padding: 8px 16px; border-radius: 9999px; font-size: 13px; color: var(--text-muted); border: 1px solid var(--glass-border); }
+        .b-stat i { width: 14px; height: 14px; color: var(--primary); }
+        
+        .glow-circle { position: absolute; border-radius: 50%; filter: blur(80px); z-index: 0; }
+        .c1 { width: 300px; height: 300px; background: rgba(96,165,250,0.15); top: -100px; left: -100px; }
+        .c2 { width: 400px; height: 400px; background: rgba(74,222,128,0.1); bottom: -150px; right: -150px; }
+
+        .login-form-container {
+            flex: 1; display: flex; justify-content: center; align-items: center; padding: 40px;
+            background: var(--bg-base); position: relative;
+        }
+
+        .login-card {
+            background: transparent; border: none;
+            width: 100%; max-width: 400px; padding: 0; box-shadow: none;
+        }
+        
+        .login-header-mobile { display: none; text-align: center; margin-bottom: 30px; }
+        .login-header-mobile i { width: 48px; height: 48px; color: var(--primary); margin-bottom: 10px; }
+        .login-header-mobile h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+        .login-header-mobile p { color: var(--text-muted); font-size: 14px; }
+        
+        @media (max-width: 900px) {
+            .login-branding { display: none; }
+            .login-header-mobile { display: block; }
+            .login-card { background: var(--glass-bg); padding: 40px 30px; border: 1px solid var(--glass-border); border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        }
 
         /* Form Elements */
         .input-group { margin-bottom: 20px; position: relative; }
@@ -142,36 +182,38 @@
         #view-dashboard.active { display: flex; }
         
         .sidebar {
-            width: 280px; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-            border-right: 1px solid var(--glass-border); padding: 25px 20px;
-            display: flex; flex-direction: column; gap: 25px; flex-shrink: 0;
+            width: 80px; background: #111114;
+            border-right: 1px solid var(--glass-border); padding: 25px 0;
+            display: flex; flex-direction: column; align-items: center; gap: 30px; flex-shrink: 0;
         }
         .main-content {
-            flex: 1; padding: 30px; display: flex; flex-direction: column; gap: 25px; overflow: hidden;
-            background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, transparent 100%);
+            flex: 1; padding: clamp(15px, 3vw, 40px); display: flex; flex-direction: column; align-items: center; overflow: hidden;
+            background: var(--bg-base);
+        }
+        .main-container {
+            width: 100%; max-width: 1400px; display: flex; flex-direction: column; gap: clamp(15px, 3vw, 30px); flex: 1; min-height: 0; overflow: hidden;
         }
 
-        .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 22px; color: white; }
+        .brand { display: flex; align-items: center; justify-content: center; }
         
         /* Sidebar Navigation */
-        .sidebar-nav { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+        .sidebar-nav { display: flex; flex-direction: column; align-items: center; gap: 20px; flex: 1; width: 100%; }
         .tab-btn {
-            display: flex; align-items: center; gap: 12px; padding: 14px 16px; width: 100%;
-            background: transparent; border: 1px solid transparent; border-radius: 12px;
-            color: var(--text-muted); font-size: 15px; font-weight: 500; cursor: pointer; transition: all 0.3s;
-            text-align: left;
+            display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+            background: transparent; border: none; border-radius: 9999px;
+            color: var(--text-muted); cursor: pointer; transition: all 0.3s;
         }
         .tab-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-        .tab-btn.active { background: rgba(59, 130, 246, 0.15); color: var(--primary); border-color: rgba(59, 130, 246, 0.3); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .tab-btn i { width: 18px; height: 18px; }
+        .tab-btn.active { background: white; color: black; box-shadow: 0 4px 15px rgba(255,255,255,0.1); }
+        .tab-btn i { width: 20px; height: 20px; }
         
         /* Top Bar in Main Content */
         .top-bar {
             display: flex; justify-content: space-between; align-items: flex-end;
             border-bottom: 1px solid var(--glass-border); padding-bottom: 20px;
         }
-        .top-bar-title h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
-        .top-bar-title p { color: var(--text-muted); font-size: 14px; margin-top: 5px; }
+        .top-bar-title h2 { font-size: clamp(22px, 2.5vw, 28px); font-weight: 700; letter-spacing: -0.5px; }
+        .top-bar-title p { color: var(--text-muted); font-size: clamp(12px, 1.2vw, 14px); margin-top: 5px; }
         
         .status-badge {
             display: inline-flex; align-items: center; gap: 8px; background: rgba(16, 185, 129, 0.1);
@@ -184,18 +226,21 @@
         .tab-content.active { display: flex; animation: fadeUp 0.4s ease; }
 
         /* Dashboard Cards Layout */
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; flex: 1; overflow: hidden; }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 2fr; gap: clamp(15px, 2vw, 24px); flex: 1; overflow: hidden; }
+        @media (max-width: 1100px) {
+            .dashboard-grid { grid-template-columns: 1fr 1.5fr; }
+        }
         @media (max-width: 900px) {
-            .dashboard-grid { grid-template-columns: 1fr; overflow-y: auto; }
+            .dashboard-grid { grid-template-columns: 1fr; overflow-y: auto; padding-right: 8px; }
         }
 
-        .card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px; display: flex; flex-direction: column; }
+        .card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 24px; padding: 24px; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+        .card:hover { transform: translateY(-3px); }
         
-        .balance-card { text-align: left; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%); }
-        .balance-card::before { content: ''; position: absolute; top: -50%; right: -20%; width: 200px; height: 200px; background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); opacity: 0.2; z-index: 0; }
-        .balance-card * { position: relative; z-index: 1; }
-        .balance-label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; margin-bottom: 10px; }
-        .balance-amount { font-size: 38px; font-weight: 800; color: white; margin-bottom: 25px; }
+        .balance-card { text-align: left; position: relative; overflow: visible; background: #151518; display: flex; flex-direction: column; justify-content: space-between; padding: 25px; }
+        .balance-card::before { content: ''; position: absolute; top: -50%; right: -20%; width: 200px; height: 200px; background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); opacity: 0.2; pointer-events: none; }
+        .balance-label { font-size: 13px; color: var(--text-muted); font-weight: 500; margin-bottom: 10px; z-index: 2; position: relative; }
+        .balance-amount { font-size: 38px; font-weight: 800; color: #FFFFFF; margin-bottom: 20px; letter-spacing: -1px; z-index: 2; position: relative; text-shadow: 0 2px 10px rgba(0,0,0,0.5); display: block; width: 100%; word-break: break-all; }
 
         .stats-row { display: flex; gap: 15px; margin-top: auto; }
         .stat-box { flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 15px; }
@@ -209,28 +254,25 @@
         
         /* Custom Scrollbar for payments */
         #pagos-container { flex: 1; overflow-y: auto; padding-right: 10px; }
-        #pagos-container::-webkit-scrollbar { width: 6px; }
-        #pagos-container::-webkit-scrollbar-track { background: transparent; }
-        #pagos-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
         .payment-item {
-            background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: 14px;
-            padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
-            transition: all 0.3s;
+            background: transparent; border-bottom: 1px solid var(--glass-border); border-radius: 0;
+            padding: 16px 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0;
+            transition: background 0.3s;
         }
-        .payment-item:hover { background: rgba(255,255,255,0.05); transform: translateX(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .payment-item:hover { background: rgba(255,255,255,0.02); transform: none; box-shadow: none; }
         .payment-item.new { animation: highlight 2.5s ease-out forwards; }
-        @keyframes highlight { 0% { background: var(--success-glow); border-color: var(--success); transform: scale(1.02); } 100% { background: rgba(255,255,255,0.02); border-color: var(--glass-border); transform: scale(1); } }
+        @keyframes highlight { 0% { background: var(--success-glow); } 100% { background: transparent; } }
         
         .pay-left { display: flex; align-items: center; gap: 15px; }
-        .pay-icon { width: 42px; height: 42px; background: rgba(16, 185, 129, 0.1); color: var(--success); border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .pay-info .ref { font-family: monospace; font-size: 14px; color: var(--text-main); font-weight: 600; }
+        .pay-icon { width: 42px; height: 42px; background: transparent; border: 1px solid var(--glass-border); color: var(--text-main); border-radius: 9999px; display: flex; align-items: center; justify-content: center; }
+        .pay-info .ref { font-size: 14px; color: var(--text-main); font-weight: 500; }
         .pay-info .time { font-size: 12px; color: var(--text-muted); margin-top: 4px;}
-        .pay-right { font-weight: 700; color: var(--success); font-size: 18px; }
+        .pay-right { font-weight: 600; color: white; font-size: 15px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(74, 222, 128, 0.1); border-radius: 9999px; }
 
-        .sidebar-footer { display: flex; flex-direction: column; gap: 10px; }
-        .btn-danger { background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.3); color: var(--danger); }
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.15); border-color: var(--danger); box-shadow: none; }
+        .sidebar-footer { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; }
+        .btn-danger { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); border-radius: 9999px; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); color: var(--danger); box-shadow: none; }
 
         /* Loader & Alerts */
         .spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 1s linear infinite; }
@@ -334,12 +376,32 @@
 
     <!-- VISTA 1: LOGIN -->
     <div id="view-config" class="view active">
-        <div class="login-card">
-            <div class="login-header">
-                <i data-lucide="shield-check"></i>
+        <!-- Lado izquierdo: Branding (Visible en Desktop) -->
+        <div class="login-branding">
+            <div class="brand-content">
+                <div class="brand-icon">
+                    <i data-lucide="shield-check"></i>
+                </div>
                 <h1>Chekin</h1>
-                <p>Verificación automatizada Mercantil</p>
+                <p>Tu asistente inteligente para la verificación automatizada de pagos móviles Mercantil. Seguridad y rapidez en cada transacción.</p>
+                <div class="brand-stats">
+                    <div class="b-stat"><i data-lucide="zap"></i><span>100% Rápido</span></div>
+                    <div class="b-stat"><i data-lucide="lock"></i><span>Seguro</span></div>
+                    <div class="b-stat"><i data-lucide="bell-ring"></i><span>Notificaciones</span></div>
+                </div>
             </div>
+            <div class="glow-circle c1"></div>
+            <div class="glow-circle c2"></div>
+        </div>
+
+        <!-- Lado derecho: Formulario -->
+        <div class="login-form-container">
+            <div class="login-card">
+                <div class="login-header-mobile">
+                    <i data-lucide="shield-check"></i>
+                    <h1>Chekin</h1>
+                    <p>Verificación automatizada Mercantil</p>
+                </div>
 
             <div class="input-group">
                 <label>Cédula o Tarjeta</label>
@@ -410,8 +472,9 @@
                 <div id="res-telegram"></div>
             </div>
 
-            <div style="text-align: center; margin-top: 25px; font-size: 12px; color: var(--text-muted); opacity: 0.7;">
-                Elaborado por Aldrin V. Rizz
+                <div style="text-align: center; margin-top: 25px; font-size: 12px; color: var(--text-muted); opacity: 0.7;">
+                    Elaborado por Aldrin V. Rizz
+                </div>
             </div>
         </div>
     </div>
@@ -422,77 +485,66 @@
         <!-- SIDEBAR LATERAL -->
         <div class="sidebar">
             <div class="brand">
-                <div style="background: var(--primary-glow); padding: 8px; border-radius: 10px; display: flex;">
-                    <i data-lucide="activity" style="color: white; width: 20px; height: 20px;"></i>
-                </div>
-                Chekin Admin
+                <i data-lucide="layers" style="color: white; width: 28px; height: 28px;"></i>
             </div>
 
             <div class="sidebar-nav">
-                <button class="tab-btn active" data-target="tab-live">
-                    <i data-lucide="layout-dashboard"></i> Panel General
+                <button class="tab-btn active" data-target="tab-live" title="Panel General">
+                    <i data-lucide="pie-chart"></i>
                 </button>
-                <button class="tab-btn" data-target="tab-manual">
-                    <i data-lucide="search"></i> Auditoría Manual
+                <button class="tab-btn" data-target="tab-manual" title="Auditoría Manual">
+                    <i data-lucide="search"></i>
                 </button>
             </div>
 
-            <!-- TIMER DEL TURNO -->
-            <div class="turno-timer">
-                <div class="timer-label">Duración del Turno</div>
-                <div class="timer-value" id="timer-turno">00:00:00</div>
+            <!-- TIMER DEL TURNO (Compacto) -->
+            <div class="turno-timer" style="background: transparent; border: none; padding: 0;">
+                <div class="timer-value" id="timer-turno" style="font-size: 12px; transform: rotate(-90deg); margin: 30px 0; color: var(--text-muted);">00:00:00</div>
             </div>
 
             <div class="sidebar-footer">
-                <button id="btnExportarCSV" class="btn" style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); color: var(--success);">
-                    <i data-lucide="file-spreadsheet" style="width:16px;"></i>
-                    <span>Exportar CSV</span>
+                <button id="btnImprimir" class="btn" style="background: transparent; border: none; color: var(--text-muted); width: 44px; height: 44px; padding: 0; border-radius: 9999px;" title="Imprimir Reporte">
+                    <i data-lucide="printer" style="width:20px;"></i>
                 </button>
-                <button id="btnImprimir" class="btn" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: white;">
-                    <i data-lucide="printer" style="width:16px;"></i>
-                    <span>Imprimir Reporte</span>
+                <button id="btnExportarCSV" class="btn" style="background: transparent; border: none; color: var(--text-muted); width: 44px; height: 44px; padding: 0; border-radius: 9999px;" title="Exportar CSV">
+                    <i data-lucide="download" style="width:20px;"></i>
                 </button>
-                <button id="btnDetener" class="btn" style="background: transparent; border: 1px solid var(--glass-border); color: #f43f5e;">
-                    <i data-lucide="pause-circle" style="width:16px;"></i>
-                    <span>Pausar Monitor</span>
+                <button id="btnDetener" class="btn" style="background: transparent; border: none; color: var(--text-muted); width: 44px; height: 44px; padding: 0; border-radius: 9999px;" title="Pausar / Reanudar Monitoreo">
+                    <i data-lucide="pause-circle" style="width:20px;"></i>
                 </button>
-                <button id="btnCerrarJornada" class="btn btn-danger">
-                    <i data-lucide="door-closed" style="width:16px;"></i>
-                    <span>Cerrar Turno</span>
+                <button id="btnCerrarJornada" class="btn btn-danger" title="Cerrar Turno">
+                    <i data-lucide="log-out" style="width:20px;"></i>
                 </button>
-                <div style="text-align: center; margin-top: 15px; font-size: 11px; color: var(--text-muted); opacity: 0.6;">
-                    Elaborado por Aldrin V. Rizz
-                </div>
             </div>
         </div>
 
         <!-- CONTENIDO PRINCIPAL -->
         <div class="main-content">
-            
-            <div class="top-bar">
-                <div class="top-bar-title">
-                    <h2 id="top-title">Panel General</h2>
-                    <p>Monitoreo automático de ingresos Mercantil</p>
+            <div class="main-container">
+                <div class="top-bar">
+                    <div class="top-bar-title">
+                        <h2 id="top-title">Hola, Admin! 👋</h2>
+                        <p>Esto es lo que está pasando con tus pagos hoy.</p>
+                    </div>
+                    <div class="status-badge" id="status-container" style="background: transparent; border: 1px solid var(--glass-border); color: var(--text-main); border-radius: 9999px;">
+                        <div class="pulse-dot"></div>
+                        <span id="txt-status">Monitoreando</span>
+                    </div>
                 </div>
-                <div class="status-badge" id="status-container">
-                    <div class="pulse-dot"></div>
-                    <span id="txt-status">Monitoreando</span>
-                </div>
-            </div>
 
-            <!-- TAB: MONITOREO EN VIVO -->
-            <div id="tab-live" class="tab-content active">
+                <!-- TAB: MONITOREO EN VIVO -->
+                <div id="tab-live" class="tab-content active">
                 <div class="dashboard-grid">
                     <!-- Columna Izquierda: Saldo y Stats -->
                     <div style="display: flex; flex-direction: column; gap: 20px;">
                         <div class="card balance-card" style="flex: 1;">
-                            <div class="balance-label" style="display: flex; align-items: center; justify-content: space-between;">
+                            <div class="balance-label" style="display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2;">
                                 <span>Saldo Disponible</span>
-                                <button id="btnToggleSaldo" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 5px; display: flex; align-items: center; transition: color 0.2s;">
+                                <button id="btnToggleSaldo" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 5px; display: flex; align-items: center; transition: color 0.2s; z-index: 10;">
                                     <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
                                 </button>
                             </div>
-                            <div class="balance-amount" id="saldo-actual">Bs. 0,00</div>
+                            <div class="balance-amount" id="saldo-actual" style="min-height: 45px;">Bs. 0,00</div>
                             <div class="stats-row">
                                 <div class="stat-box">
                                     <span class="label">Pagos (Turno)</span>
@@ -572,10 +624,10 @@
                         <div class="spinner"></div>
                     </button>
 
-                    <div id="res-verify" class="alert" style="margin-top: 20px;"></div>
+                        <div id="res-verify" class="alert" style="margin-top: 20px;"></div>
+                    </div>
                 </div>
-            </div>
-            
+            </div> <!-- End main-container -->
         </div>
     </div>
 
@@ -796,7 +848,7 @@
             
             const payRight = document.createElement('div');
             payRight.className = 'pay-right';
-            payRight.textContent = `+ Bs. ${mov.monto}`;
+            payRight.innerHTML = `Bs. ${mov.monto} <i data-lucide="check-circle-2" style="width: 14px; color: var(--success);"></i>`;
             
             item.appendChild(payLeft);
             item.appendChild(payRight);
@@ -947,20 +999,36 @@
             });
         });
 
-        // 8. Controles de Monitoreo
-        document.getElementById('btnDetener').addEventListener('click', (e) => {
-            window.electronAPI.detenerMonitoreo();
+        // 8. Controles de Monitoreo (Pausar / Reanudar)
+        let monitoreoPausado = false;
+        document.getElementById('btnDetener')?.addEventListener('click', (e) => {
             const btn = e.currentTarget;
-            btn.disabled = true;
-            document.getElementById('txt-status').textContent = 'Pausado';
-            document.querySelector('.pulse-dot').style.display = 'none';
-            document.getElementById('status-container').style.color = 'var(--text-muted)';
-            document.getElementById('status-container').style.borderColor = 'var(--glass-border)';
-            document.getElementById('status-container').style.background = 'transparent';
+            if (!monitoreoPausado) {
+                window.electronAPI.detenerMonitoreo();
+                monitoreoPausado = true;
+                document.getElementById('txt-status').textContent = 'Pausado';
+                document.querySelector('.pulse-dot').style.display = 'none';
+                document.getElementById('status-container').style.color = 'var(--text-muted)';
+                document.getElementById('status-container').style.borderColor = 'var(--glass-border)';
+                document.getElementById('status-container').style.background = 'transparent';
+                btn.innerHTML = '<i data-lucide="play-circle" style="width:20px;"></i>';
+                btn.title = 'Reanudar Monitoreo';
+            } else {
+                window.electronAPI.iniciarMonitoreo();
+                monitoreoPausado = false;
+                document.getElementById('txt-status').textContent = 'Monitoreando';
+                document.querySelector('.pulse-dot').style.display = 'block';
+                document.getElementById('status-container').style.color = 'var(--success)';
+                document.getElementById('status-container').style.borderColor = 'rgba(16, 185, 129, 0.2)';
+                document.getElementById('status-container').style.background = 'rgba(16, 185, 129, 0.1)';
+                btn.innerHTML = '<i data-lucide="pause-circle" style="width:20px;"></i>';
+                btn.title = 'Pausar Monitoreo';
+            }
+            lucide.createIcons({ root: btn });
         });
 
         // 9. Lógica para Cerrar Jornada (reemplaza confirm() nativo por modal propio)
-        document.getElementById('btnCerrarJornada').addEventListener('click', async () => {
+        document.getElementById('btnCerrarJornada')?.addEventListener('click', async () => {
             const confirmar = await showModal({
                 icon: '🔒',
                 titulo: 'Cerrar Turno',
@@ -975,7 +1043,7 @@
         });
 
         // NUEVO (Fase 4): Exportar CSV del turno actual al Escritorio
-        document.getElementById('btnExportarCSV').addEventListener('click', async () => {
+        document.getElementById('btnExportarCSV')?.addEventListener('click', async () => {
             const result = await window.electronAPI.exportarCSV();
             if (result.exito) {
                 await showModal({ icon: '✅', titulo: 'CSV Exportado', mensaje: `Archivo guardado en el Escritorio:\n${result.ruta}`, confirmText: 'OK', soloOk: true });
@@ -985,7 +1053,7 @@
         });
 
         // LÓGICA DE IMPRESIÓN DEL REPORTE DEL DÍA
-        document.getElementById('btnImprimir').addEventListener('click', async () => {
+        document.getElementById('btnImprimir')?.addEventListener('click', async () => {
             const pagosDia = await window.electronAPI.obtenerPagosDelDia();
             
             if (pagosDia.length === 0) {
