@@ -27,8 +27,15 @@ npm run build:release
 ```
 *(Espera pacientemente a que termine el proceso).*
 
-### 4. Renombrar el Archivo `.exe` (Si es necesario)
+### 4. Verificar y Garantizar Publicación (Evitar Borrador / Draft)
+**Paso Obligatorio:** Electron Builder o GitHub pueden dejar el Release en estado `draft: true` (borrador), lo que impide que `electron-updater` descargue la actualización en otros equipos.
+Ejecuta SIEMPRE una verificación mediante la API de GitHub para asegurar que el Release esté publicado (`draft: false`):
+```powershell
+node -e "const token = process.env.GH_TOKEN || process.env.GITHUB_TOKEN; const https = require('https'); const opts = { headers: { 'User-Agent': 'node', 'Authorization': 'token ' + token } }; https.get('https://api.github.com/repos/Rizz2001/chekin/releases', opts, res => { let d=''; res.on('data',c=>d+=c); res.on('end',()=> { const rels = JSON.parse(d); const target = rels.find(r => r.draft); if(target) { const data = JSON.stringify({ draft: false }); const req = https.request('https://api.github.com/repos/Rizz2001/chekin/releases/' + target.id, { method: 'PATCH', headers: { 'User-Agent': 'node', 'Authorization': 'token ' + token, 'Content-Type': 'application/json', 'Content-Length': data.length } }, r => console.log('Release ' + target.tag_name + ' publicado exitosamente (draft: false)')); req.write(data); req.end(); } else { console.log('El release ya está publicado correctamente.'); } }); });"
+```
+
+### 5. Renombrar el Archivo `.exe` (Si es necesario)
 Si por alguna razón el usuario llega a subir el archivo de manera manual desde la interfaz de GitHub, asegúrate de indicarle que NO suba archivos con espacios, o bien arréglalo usando la API de GitHub, ya que GitHub reemplazará los espacios con puntos (ej. `Chekin.Setup.1.0.7.exe`) y el archivo `latest.yml` fallará en encontrar el instalador que debe llamarse exactamente `Chekin-Setup-1.0.7.exe` (con guiones).
 
-### 5. Confirmación al Usuario
+### 6. Confirmación al Usuario
 Indica al usuario que el proceso ha finalizado y que en las demás PCs el software se actualizará de manera silenciosa descargando el Instalador de un Clic (`latest.yml`).
